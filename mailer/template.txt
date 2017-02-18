@@ -1,0 +1,13 @@
+VPN login details
+
+
+Hello $fname,
+
+
+You are receiving this email because you have been granted access to some service
+
+Your ID:    $username
+Password:   $password
+
+Enjoy your generic service acceess!
+
