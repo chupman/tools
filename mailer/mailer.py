@@ -11,7 +11,7 @@ python mailer.py -s 9.52.224.217 --from chupman@us.ibm.com \
 from __future__ import print_function
 from __future__ import unicode_literals
 
-import argparse
+import configargparse
 import getpass
 import csv
 import email
@@ -20,39 +20,41 @@ from email.MIMEText import MIMEText
 import smtplib
 from string import Template
 import pprint
+import json
 
 def getArgs():
     """
     Supports the command-line arguments listed below.
     """
-    parser = argparse.ArgumentParser(
+    p = configargparse.ArgParser(
+        default_config_files=['config.ini', 'mailerconfig.ini'],
         description='Arguments for smtp server, creds, and input files')
-    parser.add_argument('-s', '--host', required=False, action='store',
+    p.add('-s', '--host', required=False, action='store',
                         help='Remote smtp server to connect use')
-    parser.add_argument('--port', required=False, action='store',
+    p.add('--port', required=False, action='store',
                         default='25',
                         help='port for the smtp server')
-    parser.add_argument('--subject', required=False, action='store',
+    p.add('--subject', required=False, action='store',
                         help='subject for email message')
-    parser.add_argument('--sender', required=False, action='store',
+    p.add('--sender', required=False, action='store',
                         help='email address message will be sent as')
-    parser.add_argument('-u', '--user', required=False, action='store',
+    p.add('-u', '--username', required=False, action='store',
                         help='username/email for smtp')
-    parser.add_argument('-p', '--password', required=False, action='store',
+    p.add('-p', '--password', required=False, action='store',
                         help='Password to use for smtp')
-    parser.add_argument('--prompt',  required=False, action='store',
+    p.add('--prompt',  required=False, action='store',
                         help='Promt for password to use for smtp')
-    parser.add_argument('--silent', required=False, action='store_true',
+    p.add('--silent', required=False, action='store_true',
                         help='supress output to screen')
-    parser.add_argument('-t', '--test', required=False, action='store_true',
+    p.add('--test', required=False, action='store_true',
                         help='Display resulting emails in stdout and do not send')
-    parser.add_argument('--csvfile', required=False, action='store',
+    p.add('--csvfile', required=False, action='store',
                         help='Filename and path of csv file')
-    parser.add_argument('--template', required=False, action='store',
+    p.add('--template', required=False, action='store',
                         help='Filename and path of csv file')
-    parser.add_argument('--config', required=False, action='store',
+    p.add('--config', required=False, action='store', is_config_file=True,
                         help='config file with auth, server, and subject')
-    args = parser.parse_args()
+    args = p.parse_args()
     return args
 
 
@@ -89,6 +91,7 @@ def main():
                                    'user %s: ' % (args.host, args.user))
 
     # First load the template and the csv as variables
+    print(args.template)
     rawtemplate = open(args.template)
     template = Template(rawtemplate.read())
     f = open(args.csvfile, 'rb')
