@@ -91,7 +91,7 @@ def main():
                                    'user %s: ' % (args.host, args.user))
 
     # First load the template and the csv as variables
-    print(args.template)
+    #print(args.template)
     rawtemplate = open(args.template)
     template = Template(rawtemplate.read())
     f = open(args.csvfile, 'rb')
