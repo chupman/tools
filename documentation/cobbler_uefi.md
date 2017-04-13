@@ -5,7 +5,7 @@ Preface: This guide does not cover basic cobbler installation or configuration
 
 `cobbler profile copy --name=Ubuntu-16.04-x86_64 --newname=Ubuntu-16.04-x86_64-efi`
 
-![copy profile](copy_profile.jpg)
+![copy profile](images/copy_profile.jpg)
 
 2. Once we have a new profile to work with we can create a copy of the seed file to work with.
 
@@ -13,6 +13,6 @@ Preface: This guide does not cover basic cobbler installation or configuration
 
   Then set it as the seed file for the profile
 
-`cobbler profile edit --name=Ubuntu-16.04-x86_64-efi ks=/var/lib/cobbler/kickstarts/uefi.seed`
+`cobbler profile edit --name=Ubuntu-16.04-x86_64-efi kickstart=/var/lib/cobbler/kickstarts/uefi.seed`
 
-![copy profile](set_seedfile.jpg)
+![copy profile](images/set_seedfile.jpg)
