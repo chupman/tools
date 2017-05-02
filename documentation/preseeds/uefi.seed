@@ -1,0 +1,216 @@
+# Mostly based on the Ubuntu installation guide
+# https://help.ubuntu.com/12.04/installation-guide/
+
+# Preseeding only locale sets language, country and locale.
+d-i debian-installer/locale string en_US
+
+# Only prompt for critical questions
+d-i debconf/priority string critical
+
+# Keyboard selection.
+# Disable automatic (interactive) keymap detection.
+d-i console-setup/ask_detect boolean false
+d-i keyboard-configuration/layoutcode string us
+d-i keyboard-configuration/variantcode string
+
+# netcfg will choose an interface that has link if possible. This makes it
+# skip displaying a list if there is more than one interface.
+#set $myhostname = $getVar('hostname',$getVar('name','cobbler')).replace("_","-")
+#set $boot_interface = $getVar('mac_address_enp22s0f0', 'select auto').replace(":","-")
+#
+d-i netcfg/link_wait_timeout string 10
+d-i netcfg/choose_interface select enp22s0f0
+d-i netcfg/get_ipaddress string 9.30.211.1
+d-i netcfg/get_netmask string 255.255.254.0
+d-i netcfg/get_gateway string 9.30.210.1
+d-i netcfg/get_nameservers string 9.30.140.185
+d-i netcfg/confirm_static boolean true
+d-i netcfg/get_hostname string $myhostname
+
+# If non-free firmware is needed for the network or other hardware, you can
+# configure the installer to always try to load it, without prompting. Or
+# change to false to disable asking.
+# d-i hw-detect/load_firmware boolean true
+
+# NTP/Time Setup
+d-i time/zone string US/Eastern
+d-i clock-setup/utc boolean true
+d-i clock-setup/ntp boolean true
+d-i clock-setup/ntp-server  string ntp.ubuntu.com
+
+# Setup the installation source
+d-i mirror/country string manual
+d-i mirror/http/hostname string $http_server
+d-i mirror/http/directory string /cobbler/ks_mirror/$distro_name/
+d-i mirror/http/proxy string
+
+#set $os_v = $getVar('os_version','')
+#if $os_v and $os_v.lower()[0] > 'p'
+# Required at least for 12.10+
+d-i live-installer/net-image string http://$http_server/cobbler/links/$distro_name/install/filesystem.squashfs
+#end if
+
+# Suite to install.
+# d-i mirror/suite string precise
+# d-i mirror/udeb/suite string precise
+
+# Components to use for loading installer components (optional).
+# d-i mirror/udeb/components multiselect main, restricted
+
+d-i partman-basicfilesystems/choose_label string gpt
+d-i partman-basicfilesystems/default_label string gpt
+d-i partman-partitioning/choose_label string gpt
+d-i partman-partitioning/default_label string gpt
+d-i partman/choose_label string gpt
+d-i partman/default_label string gpt
+d-i partman-partitioning/choose_label select gpt
+
+d-i partman-lvm/device_remove_lvm boolean true
+d-i partman-md/device_remove_md boolean true
+d-i partman-auto/purge_lvm_from_device  boolean true
+
+d-i partman-auto/disk string /dev/sda /dev/sdb
+d-i partman-auto/method string raid
+d-i partman-auto/alignment string optimal
+# partman-auto/choose_recipe select raid-efi-lvm
+d-i partman-auto/alignment string optimal
+
+d-i partman-auto-lvm/new_vg_name string os
+d-i partman-auto-lvm/guided_size string max
+
+d-i partman-auto/expert_recipe string                      \
+      raid-efi-lvm ::                                      \
+#        1 1 1 raid                                         \
+#          $primary{ } $bios_boot{ } method{ biosgrub }     \
+#          raidid{ 1 } $iflabel{ gpt } $gptonly{ }          \ 
+#          $reusemethod{ }                                  \
+#        .                                                  \
+        512 10 512 raid                                    \
+          $primary{ } $lvmignore{ }                        \
+          method{ raid } $iflabel{ gpt }                   \
+          mountpoint{ /boot/efi } $gptonly{ }              \
+          raidid{ 2 }                                      \
+        .                                                  \
+        512 20 512 raid                                    \
+          $primary{ } $lvmignore{ } $bootable{ }           \
+          method{ biosgrub } $iflabel{ gpt } gptonly{ }        \
+          use_filesystem{ } mountpoint{ /boot }            \
+          raidid{ 3 }                                      \
+        .                                                  \
+        8192 50 -1 raid                                    \
+          $primary{ } $lvmignore{ }                        \
+          method{ raid }  gptonly{ }                       \
+          raidid{ 4 }                                      \
+        .                                                  \
+        4096 90 200% linux-swap                            \
+          $defaultignore $lvmok{ } lv_name{ swap }         \
+          method{ swap } format{ }                         \
+        .                                                  \
+        20480 100 -1 ext4                                  \
+          $defaultignore $lvmok{ } lv_name{ root }         \
+          method{ format } format{ }                       \
+          use_filesystem{ } filesystem{ ext4 }             \
+          mountpoint{ / }                                  \
+        .
+
+d-i partman-auto-raid/recipe string                        \
+#    1 2 0 free       -          raidid=1               .   \
+    1 2 0 fat32      /boot/efi  raidid=2               .   \
+    1 2 0 ext4       /boot      raidid=3               .   \
+    1 2 0 lvm        -          raidid=4               .
+
+# the 'deleteme' LV soaks up the leftover space in the VG
+# d-i preseed/late_command string in-target lvremove -f vg_sys/deleteme
+#
+d-i partman-partitioning/confirm_write_new_label boolean true
+d-i partman/choose_partition select finish
+#
+d-i partman/confirm boolean true
+d-i partman/confirm_nooverwrite boolean true
+d-i partman-lvm/confirm boolean true
+d-i partman-md/confirm boolean true
+d-i partman-md/confirm_nooverwrite  boolean true
+#
+# d-i partman/mount_style select label
+#
+# d-i mdadm/boot_degraded boolean false
+# root account and password
+d-i passwd/root-login boolean true
+d-i passwd/root-password-crypted password $default_password_crypted
+
+# skip creation of a normal user account.
+d-i passwd/make-user boolean false
+
+# Tell installer which disk grub should be installed on.
+d-i grub-installer/bootdev string /dev/md2
+
+# You can choose to install restricted and universe software, or to install
+# software from the backports repository.
+# d-i apt-setup/restricted boolean true
+# d-i apt-setup/universe boolean true
+# d-i apt-setup/backports boolean true
+
+# Uncomment this if you don't want to use a network mirror.
+# d-i apt-setup/use_mirror boolean false
+
+# Select which update services to use; define the mirrors to be used.
+# Values shown below are the normal defaults.
+# d-i apt-setup/services-select multiselect security
+# d-i apt-setup/security_host string security.ubuntu.com
+# d-i apt-setup/security_path string /ubuntu
+
+# Enable deb-src lines
+# d-i apt-setup/local0/source boolean true
+
+# URL to the public key of the local repository; you must provide a key or
+# apt will complain about the unauthenticated repository and so the
+# sources.list line will be left commented out
+# d-i apt-setup/local0/key string http://local.server/key
+
+# By default the installer requires that repositories be authenticated
+# using a known gpg key. This setting can be used to disable that
+# authentication. Warning: Insecure, not recommended.
+# d-i debian-installer/allow_unauthenticated boolean true
+
+# Individual additional packages to install
+# wget is REQUIRED otherwise quite a few things won't work
+# later in the build (like late-command scripts)
+d-i pkgsel/include string ntp ssh wget
+
+# Use the following option to add additional boot parameters for the
+# installed system (if supported by the bootloader installer).
+# Note: options passed to the installer will be added automatically.
+d-i debian-installer/add-kernel-opts string $kernel_options_post 
+
+# Avoid that last message about the install being complete.
+d-i finish-install/reboot_in_progress note
+
+## Figure out if we're kickstarting a system or a profile
+#if $getVar('system_name','') != ''
+#set $what = "system"
+#else
+#set $what = "profile"
+#end if
+
+# This first command is run as early as possible, just after preseeding is read.
+# d-i preseed/early_command string [command]
+d-i preseed/early_command string wget -O- \
+   http://$http_server/cblr/svc/op/script/$what/$name/?script=preseed_early_Ubuntu16.04-efi | \
+   /bin/sh -s
+
+# This command is run immediately before the partitioner starts. It may be
+# useful to apply dynamic partitioner preseeding that depends on the state
+# of the disks (which may not be visible when preseed/early_command runs).
+# d-i partman/early_command \
+#       string debconf-set partman-auto/disk "\$(list-devices disk | head -n1)"
+
+# This command is run just before the install finishes, but when there is
+# still a usable /target directory. You can chroot to /target and use it
+# directly, or use the apt-install and in-target commands to easily install
+# packages and run commands in the target system.
+# d-i preseed/late_command string [command]
+d-i preseed/late_command string wget -O- \
+   http://$http_server/cblr/svc/op/script/$what/$name/?script=preseed_late_default | \
+   chroot /target /bin/sh -s
+   sed -e 's/PermitRootLogin without-password/PermitRootLogin yes/' /target/etc/ssh/sshd_config > /target/etc/ssh/sshd_config.new; \
+   mv -f /target/etc/ssh/sshd_config.new /target/etc/ssh/sshd_config ;
