@@ -1,0 +1,4 @@
+cd /root
+mkdir --mode=700 .ssh
+echo ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAoSWkLlqz2colV0mTieBm8YNRxs3z9AOSVFcmktazdpW79/FVcmf//wka4TIHnfB+HkCAxBxMKWpIZN3hxEStrn3LErLdRtvi4nQTVDXzBa+7bRLx77bvutaaqDlKV68udDN1ydeYy23UM7cJ5IMCTzFjfRIT23NEmVy5zCNh/pnbWEegD4urj6CJXFfSywBZTWxqL58vPRsMN7VigzRNc13g0w2hMRoYFHINuAJMrJzZheeb8VX0T57LQ6JMlvy/QadMsWqflNy5uSGja0JwrCSdgzojLD7581nK5XVbCuGOj8Uu6VMppqAKSJVG9Wp2CXfQIS1HMSbIzETYy92EYQ== root@x3650m2001 >> .ssh/authorized_keys 
+chmod 600 .ssh/authorized_keys
